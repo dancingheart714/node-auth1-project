@@ -1,32 +1,14 @@
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
-const session = require('express-session');
-const KnexSessionStore = require('connect-session-knex')(session);
 
 const usersRouter = require('./users/users-router');
 const authRouter = require('./auth/auth-router');
 
-const sessionConfig = {
-  name: 'chocolatechip',
-  secret: 'keep it secret, keep it safe',
-  cookie: {
-    maxAge: 1000 * 60 * 60, // this equals an hour
-    secure: false, // this is false during testing but true when we deploy
-    httpsOnly: false,
-  },
-  rolling: true,
-  resave: false,
-  saveUninitialize: false,
+const session = require('express-session');
+const Store = require('connect-session-knex')(session);
+const knex = require('../data/db-config');
 
-  store: new KnexSessionStore({
-    knex: require('../database/db-config.js'),
-    tablename: 'sessions',
-    sidfieldname: 'sid',
-    createtable: 'true',
-    clearInterval: 1000 * 60 * 60,
-  }),
-};
 const server = express();
 
 /**
@@ -41,8 +23,26 @@ const server = express();
   The session can be persisted in memory (would not be adecuate for production)
   or you can use a session store like `connect-session-knex`.
  */
-
-server.use(session(sessionConfig));
+server.use(
+  session({
+    name: 'chocolatechip',
+    secret: 'shhh, it is s a secret',
+    saveUninitialized: false,
+    resave: false,
+    store: new Store({
+      knex,
+      createTable: true,
+      clearInterval: 1000 * 60 * 10,
+      tablename: 'sessions',
+      sidfieldname: 'sid',
+    }),
+    cookie: {
+      maxAge: 1000 * 60 * 10,
+      secure: false,
+      httpOnly: true,
+    },
+  })
+);
 server.use(helmet());
 server.use(express.json());
 server.use(cors());

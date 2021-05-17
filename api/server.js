@@ -1,4 +1,3 @@
-const path = require('path');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -8,29 +7,27 @@ const KnexSessionStore = require('connect-session-knex')(session);
 const usersRouter = require('./users/users-router');
 const authRouter = require('./auth/auth-router');
 
-const db = require('../data/db-config');
-const Knex = require('knex');
-
 const sessionConfig = {
-  name: 'monkey',
-  secret: 'keep it secret, keep it safe!',
+  name: 'chocolatechip',
+  secret: 'keep it secret, keep it safe',
   cookie: {
-    maxAge: 1000 * 60 * 60,
-    secure: false, // if true the cookie is not set unless it's an https connection
-    httpOnly: false, // if true the cookie is not accessible through document.cookie
+    maxAge: 1000 * 60 * 60, // this equals an hour
+    secure: false, // this is false during testing but true when we deploy
+    httpsOnly: false,
   },
   rolling: true,
-  resave: false, // some data stores need this set to true
-  saveUninitialized: false, // privacy implications, if false no cookie is set on client unless the req.session is changed
-  // ALLOWS TO SAVE THE SESSIONS TO THE DB
+  resave: false,
+  saveUninitialize: false,
+
   store: new KnexSessionStore({
-    knex: require('../database/db-config.js'), // configured instance of knex
-    tablename: 'sessions', // table that will store sessions inside the db, name it anything you want
-    sidfieldname: 'sid', // column that will hold the session id, name it anything you want
-    createtable: true, // if the table does not exist, it will create it automatically
-    clearInterval: 1000 * 60 * 60, // time it takes to check for old sessions and remove them from the database to keep it clean and performant
+    knex: require('../database/db-config.js'),
+    tablename: 'sessions',
+    sidfieldname: 'sid',
+    createtable: 'true',
+    clearInterval: 1000 * 60 * 60,
   }),
 };
+const server = express();
 
 /**
   Do what needs to be done to support sessions with the `express-session` package!
@@ -44,12 +41,11 @@ const sessionConfig = {
   The session can be persisted in memory (would not be adecuate for production)
   or you can use a session store like `connect-session-knex`.
  */
-const server = express();
 
+server.use(session(sessionConfig));
 server.use(helmet());
 server.use(express.json());
 server.use(cors());
-server.use(session(sessionConfig));
 
 server.use('/api/users', usersRouter);
 server.use('/api/auth', authRouter);

@@ -2,7 +2,6 @@ const model = require('../users/users-model');
 
 /*
   If the user does not have a session saved in the server
-
   status 401
   {
     "message": "You shall not pass!"
@@ -11,7 +10,7 @@ const model = require('../users/users-model');
 function restricted() {
   return async (req, res, next) => {
     try {
-      if (!req.session || !req.session.gingersnap) {
+      if (!req.session || !req.session.chocolatechip) {
         return res.status(401).json({
           message: 'You shall not pass!',
         });
@@ -25,7 +24,6 @@ function restricted() {
 
 /*
   If the username in req.body already exists in the database
-
   status 422
   {
     "message": "Username taken"
@@ -82,7 +80,7 @@ function checkUsernameExists() {
   }
 */
 function checkPasswordLength() {
-  return async (req, res, next) => {
+  return (req, res, next) => {
     try {
       if (!req.body.password || req.body.password <= 3) {
         return res.status(422).json({

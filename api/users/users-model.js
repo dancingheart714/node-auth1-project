@@ -18,7 +18,7 @@ function findBy(filter) {
   function findById(user_id) {
     return db('users')
       .select('user_id', 'username')
-      .where({ user_id, user_id })
+      .where('user_id', user_id)
       .first();
   }
 
@@ -29,8 +29,6 @@ function findBy(filter) {
     const [id] = await db('users').insert(user);
     return findById(id);
   }
-
-  // Don't forget to add these to the `exports` object so they can be required in other modules
 
   module.exports = {
     find,

@@ -1,6 +1,13 @@
 // Require `checkUsernameFree`, `checkUsernameExists` and `checkPasswordLength`
 // middleware functions from `auth-middleware.js`. You will need them here!
-
+const router = require('express').Router();
+const User = require('../users/users-model');
+const bcrypt = require('bcryptjs');
+const {
+  checkUsernameFree,
+  checkUsernameExists,
+  checkPasswordLength,
+} = require('./auth-middleware');
 
 /**
   1 [POST] /api/auth/register { "username": "sue", "password": "1234" }
@@ -24,8 +31,21 @@
     "message": "Password must be longer than 3 chars"
   }
  */
+router.post(
+  '/register',
+  checkPasswordLength,
+  checkUsernameFree,
+  (req, res, next) => {
+    const { username, password } = req.body;
+    const hash = bcrypt.hashSync(password, 8);
 
-
+    User.add({ username, password: hash })
+      .then((saved) => {
+        res.status(201).json(saved);
+      })
+      .catch(next);
+  }
+);
 /**
   2 [POST] /api/auth/login { "username": "sue", "password": "1234" }
 
@@ -41,8 +61,15 @@
     "message": "Invalid credentials"
   }
  */
-
-
+router.post('/login', checkUsernameExists, (req, res, next) => {
+  const { password } = req.body;
+  if (bcrypt.compareSync(password, req.user.password)) {
+    req.session.user = req.user;
+    res.json({ status: 200, message: `Welcome ${req.user.username}!` });
+  } else {
+    next({ status: 401, message: 'Invalid credentials' });
+  }
+});
 /**
   3 [GET] /api/auth/logout
 
@@ -59,5 +86,27 @@
   }
  */
 
- 
-// Don't forget to add the router to the `exports` object so it can be required in other modules
+router.get('/logout', (req, res, next) => {
+  if (req.session.user) {
+    res.clearCookie('chocolatechip');
+    req.session.destroy((err) => {
+      if (err) {
+        next(err);
+      } else {
+        res.json({ status: 200, message: 'logged out' });
+      }
+    });
+  } else {
+    res.json({ status: 200, message: 'no session' });
+  }
+});
+
+router.use((err, req, res, next) => {
+  res.status(500).json({
+    customMessage: 'something went wrong in auth router',
+    message: err.message,
+    stack: err.stack,
+  });
+});
+
+module.exports = router;
